@@ -3,22 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <title>ProctorHQ | Secure Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .login-wrapper {
+            display: flex; min-height: 100vh; 
+            align-items: center; justify-content: center;
+            position: relative; z-index: 10;
+        }
+        .login-card {
+            width: 100%; max-width: 420px; padding: 48px;
+            text-align: center;
+        }
+        .logo-glow {
+            width: 60px; height: 60px; margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--primary), #a855f7);
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; color: white;
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+    </style>
 </head>
 <body>
-    <div class="container" style="display: flex; min-height: 80vh; align-items: center; justify-content: center;">
-        
-        <div class="login-card">
-            <div style="margin-bottom: 30px;">
-                <h1 style="font-size: 1.8rem; margin-bottom: 10px;">ProctorHQ</h1>
+    <div class="bg-fixed-layer"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="login-wrapper">
+        <div class="glass-panel login-card">
+            <div style="margin-bottom: 35px;">
+                <div class="logo-glow">🛡️</div>
+                <h1 style="font-size: 2rem; margin-bottom: 8px;">ProctorHQ</h1>
                 <p class="subtitle">Secure Examination Gateway</p>
             </div>
 
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="input-group">
                     <label class="input-label">Admin ID</label>
-                    <input type="text" id="adminId" class="input-field" placeholder="Enter Admin ID" required>
+                    <input type="text" id="adminId" class="input-field" placeholder="Enter ID" required>
                 </div>
                 
                 <div class="input-group">
@@ -26,17 +47,17 @@
                     <input type="password" id="password" class="input-field" placeholder="••••••••" required>
                 </div>
 
-                <button type="submit" class="btn-primary">Authenticate</button>
+                <button type="submit" class="btn-primary" style="margin-top: 10px;">Authenticate System</button>
             </form>
 
-            <div class="divider"><span>OR</span></div>
+            <div style="margin: 30px 0; border-top: 1px solid var(--glass-border); position: relative;">
+                <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #151e32; padding: 0 10px; color: var(--text-muted); font-size: 0.75rem; border-radius: 4px;">OR</span>
+            </div>
 
-            <div style="text-align: center;">
-                <p class="subtitle" style="margin-bottom: 15px;">Taking an exam?</p>
+            <div>
                 <a href="/student.html" class="btn-secondary">Launch Student Portal</a>
             </div>
         </div>
-
     </div>
 
     <script>
@@ -45,16 +66,12 @@
             const id = document.getElementById('adminId').value;
             const pass = document.getElementById('password').value;
 
-            // HARDCODED CREDENTIALS (Simple Check)
             if (id === "admin" && pass === "password123") {
-                // Save "Key" to browser storage
                 localStorage.setItem("proctor_auth_token", "valid_session_key");
-                
-                // Redirect to Dashboard
                 window.location.href = "/admin.html";
             } else {
                 alert("⛔ Access Denied: Invalid Credentials");
-                document.getElementById('password').value = ''; // Clear password
+                document.getElementById('password').value = '';
             }
         }
     </script>
