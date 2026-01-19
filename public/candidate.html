@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ProctorHQ | Forensics</title>
+    <title>Sentinel | Forensics</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code&display=swap" rel="stylesheet">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -24,7 +24,7 @@
                 <ion-icon name="arrow-back-outline"></ion-icon> Dashboard
             </a>
             <div style="display: flex; gap: 12px;">
-                <button onclick="downloadReport()" class="btn-primary">
+                <button onclick="downloadReport()" class="btn-primary" style="width: auto;">
                     <ion-icon name="download-outline" style="vertical-align: middle; margin-right: 6px;"></ion-icon>
                     Export Evidence
                 </button>
@@ -34,15 +34,13 @@
         <div class="glass-panel" style="padding: 24px; margin-bottom: 24px;">
             <div class="identity-grid">
                 <div class="id-avatar" id="id-initials">--</div>
-                
                 <div>
                     <h1 style="font-size: 1.5rem; margin-bottom: 4px;" id="p-name">--</h1>
                     <div style="display: flex; gap: 20px; font-family: 'Fira Code', monospace; font-size: 0.9rem; color: var(--text-muted);">
                         <span>ROLL: <span id="p-roll" style="color: white;">--</span></span>
-                        <span>SAP_ID: <span id="p-sap" style="color: white;">--</span></span>
+                        <span>SAP: <span id="p-sap" style="color: white;">--</span></span>
                     </div>
                 </div>
-
                 <div class="risk-indicator">
                     <div class="risk-label">Integrity Risk</div>
                     <div class="risk-value" id="risk-val">Calculating...</div>
@@ -51,7 +49,6 @@
         </div>
 
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-            
             <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column;">
                 <div class="flex-between" style="margin-bottom: 20px;">
                     <h3 style="font-size: 1.1rem; font-weight: 600;">Violation Velocity</h3>
@@ -64,37 +61,30 @@
 
             <div class="glass-panel" style="display: flex; flex-direction: column; overflow: hidden; max-height: 450px;">
                 <div style="padding: 20px; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.2);">
-                    <h3 style="font-size: 1rem; font-weight: 600;">System Events</h3>
+                    <h3 style="font-size: 1rem; font-weight: 600;">Sentinel Events</h3>
                 </div>
-                
                 <div id="log-feed" style="overflow-y: auto; flex-grow: 1;">
-                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- DATA POPULATION ---
         document.getElementById('p-name').innerText = studentData.name;
         document.getElementById('p-roll').innerText = studentData.roll;
         document.getElementById('p-sap').innerText = studentData.sap;
         document.getElementById('id-initials').innerText = studentData.name.substring(0,2).toUpperCase();
 
-        // Calculate Risk
         const violationCount = studentData.logs.length;
         const riskEl = document.getElementById('risk-val');
         if(violationCount === 0) {
-            riskEl.innerText = "LOW";
-            riskEl.className = "risk-value risk-low";
+            riskEl.innerText = "LOW"; riskEl.className = "risk-value risk-low";
         } else if (violationCount < 5) {
-            riskEl.innerText = "MODERATE";
-            riskEl.style.color = "var(--warning)";
+            riskEl.innerText = "MODERATE"; riskEl.style.color = "var(--warning)";
         } else {
-            riskEl.innerText = "CRITICAL";
-            riskEl.className = "risk-value risk-high";
+            riskEl.innerText = "CRITICAL"; riskEl.className = "risk-value risk-high";
         }
 
-        // --- FEED POPULATION ---
         const feed = document.getElementById('log-feed');
         if(studentData.logs.length === 0) {
             feed.innerHTML = `
@@ -107,12 +97,9 @@
                 let iconName = "alert-circle-outline";
                 if(log.violation.toLowerCase().includes("phone")) iconName = "phone-portrait-outline";
                 if(log.violation.toLowerCase().includes("person")) iconName = "people-outline";
-                
                 feed.innerHTML += `
                 <div class="feed-item">
-                    <div class="feed-icon">
-                        <ion-icon name="${iconName}"></ion-icon>
-                    </div>
+                    <div class="feed-icon"><ion-icon name="${iconName}"></ion-icon></div>
                     <div class="feed-content">
                         <div class="feed-title">${log.violation}</div>
                         <div class="feed-time">${log.time}</div>
@@ -121,19 +108,14 @@
             });
         }
 
-        // --- CHART ---
         const ctx = document.getElementById('violationChart').getContext('2d');
-        
         let labels = [studentData.startTime];
         let dataPoints = [0];
-        
         studentData.logs.forEach((log, index) => {
-            labels.push(log.time);
-            dataPoints.push(index + 1);
+            labels.push(log.time); dataPoints.push(index + 1);
         });
         labels.push(studentData.endTime === '-' ? 'Now' : studentData.endTime);
         dataPoints.push(studentData.logs.length);
-
         const gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, 'rgba(244, 63, 94, 0.5)');
         gradient.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
@@ -145,30 +127,23 @@
                 datasets: [{
                     label: 'Cumulative Anomalies',
                     data: dataPoints,
-                    borderColor: '#f43f5e',
-                    backgroundColor: gradient,
-                    borderWidth: 2,
-                    pointBackgroundColor: '#1e293b',
-                    pointBorderColor: '#f43f5e',
-                    pointRadius: 4,
-                    fill: true,
-                    tension: 0.1,
-                    stepped: true
+                    borderColor: '#f43f5e', backgroundColor: gradient, borderWidth: 2,
+                    pointBackgroundColor: '#1e293b', pointBorderColor: '#f43f5e', pointRadius: 4,
+                    fill: true, tension: 0.1, stepped: true
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
                     y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    x: { grid: { display: false }, ticks: { display: false } } // Hide x-axis labels for cleaner look
+                    x: { grid: { display: false }, ticks: { display: false } }
                 }
             }
         });
 
         function downloadReport() {
-            let content = `EVIDENCE LOG: ${studentData.name} (${studentData.sap})\nGenerated: ${new Date().toLocaleString()}\n\nTIMELINE:\n`;
+            let content = `SENTINEL EVIDENCE LOG: ${studentData.name} (${studentData.sap})\nGenerated: ${new Date().toLocaleString()}\n\nTIMELINE:\n`;
             studentData.logs.forEach(l => content += `[${l.time}] ${l.violation}\n`);
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([content], {type:'text/plain'}));

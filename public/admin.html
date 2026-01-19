@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ProctorHQ | Mission Control</title>
+    <title>Sentinel | Mission Control</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,14 +19,16 @@
         <header class="flex-between">
             <div>
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 1.5rem;">🛡️</span>
-                    <h1>ProctorHQ Monitor</h1>
+                    <div style="width: 40px; height: 40px; background: rgba(99, 102, 241, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                        <ion-icon name="scan-outline" style="font-size: 1.5rem;"></ion-icon>
+                    </div>
+                    <h1 class="brand-text" style="font-size: 1.8rem;">SENTINEL</h1>
                 </div>
-                <p class="subtitle" style="margin-left: 44px;">Real-time exam surveillance & integrity system</p>
+                <p class="subtitle" style="margin-left: 52px;">Live Integrity Monitoring System</p>
             </div>
             <div style="display: flex; gap: 15px; align-items: center;">
                 <div class="badge badge-success" id="server-status" style="padding: 8px 16px;">
-                    <div class="dot"></div> System Online
+                    <div class="dot"></div> Online
                 </div>
                 <button onclick="logout()" class="btn-secondary" style="color: var(--danger); border-color: rgba(244, 63, 94, 0.3);">
                     Log Out
@@ -41,12 +44,12 @@
             </div>
             <div class="stat-card">
                 <div class="stat-icon" style="color: var(--danger);">⚠️</div>
-                <div class="stat-label">Total Violations</div>
+                <div class="stat-label">Violations Detected</div>
                 <div class="stat-value" id="count-violations" style="color: #fb7185; text-shadow: 0 0 20px rgba(244, 63, 94, 0.3);">0</div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">⏱️</div>
-                <div class="stat-label">Session Time</div>
+                <div class="stat-label">Session Duration</div>
                 <div class="stat-value" id="session-time" style="font-variant-numeric: tabular-nums;">00:00</div>
             </div>
         </div>
@@ -64,7 +67,7 @@
                     </tr>
                 </thead>
                 <tbody id="student-table">
-                    </tbody>
+                </tbody>
             </table>
         </div>
     </div>
@@ -91,7 +94,6 @@
         function updateStats() {
             const activeCount = currentStudents.filter(s => s.endTime === '-').length;
             document.getElementById('count-active').innerText = activeCount;
-            
             let vCount = 0;
             currentStudents.forEach(s => vCount += s.logs.length);
             document.getElementById('count-violations').innerText = vCount;
@@ -100,37 +102,26 @@
         function renderTable() {
             const tbody = document.getElementById('student-table');
             tbody.innerHTML = '';
-
             if (currentStudents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 60px; color: var(--text-muted);">Waiting for candidates to join...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 60px; color: var(--text-muted);">Waiting for candidates...</td></tr>';
                 return;
             }
-
             currentStudents.forEach((student, index) => {
                 const initials = student.name.substring(0,2).toUpperCase();
                 const isWeb = student.name.includes("(WEB)");
-                
                 let badgeClass = "badge-success";
                 let statusText = "Clean Record";
-
                 if (student.riskScore && student.riskScore.includes("VIOLATION")) {
-                    badgeClass = "badge-danger";
-                    statusText = "Actively Cheating"; 
-                } 
-                else if (student.logs.length > 0) {
-                    badgeClass = "badge-warning";
-                    statusText = `Flagged (${student.logs.length})`;
+                    badgeClass = "badge-danger"; statusText = "Actively Cheating"; 
+                } else if (student.logs.length > 0) {
+                    badgeClass = "badge-warning"; statusText = `Flagged (${student.logs.length})`;
                 }
-
                 if (student.endTime !== '-') {
-                    badgeClass = "badge-neutral";
-                    statusText = student.logs.length > 0 ? `Finished (Flagged)` : "Finished (Clean)";
+                    badgeClass = "badge-neutral"; statusText = student.logs.length > 0 ? `Finished (Flagged)` : "Finished (Clean)";
                 }
-
                 let endTimeDisplay = student.endTime === '-' 
                     ? `<span style="color:#34d399; font-weight:600; font-size:0.9rem; text-shadow: 0 0 10px rgba(52, 211, 153, 0.4);">● Online</span>` 
                     : `<span style="font-family: monospace; color:var(--text-muted);">${student.endTime}</span>`;
-
                 const row = `
                 <tr>
                     <td>
@@ -138,7 +129,7 @@
                             <div class="avatar">${initials}</div>
                             <div>
                                 <div style="font-weight: 600; cursor:pointer; color: white; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='white'" onclick="viewCandidate(${index})">${student.name}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted);">${isWeb ? 'Browser Client' : 'Secure App Client'}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">${isWeb ? 'Browser' : 'App'}</div>
                             </div>
                         </div>
                     </td>
@@ -146,11 +137,7 @@
                     <td style="font-family: monospace; color: var(--text-muted);">${student.sap}</td>
                     <td style="font-family: monospace;">${student.startTime}</td>
                     <td>${endTimeDisplay}</td> 
-                    <td>
-                        <div class="badge ${badgeClass}">
-                            <div class="dot"></div> ${statusText}
-                        </div>
-                    </td>
+                    <td><div class="badge ${badgeClass}"><div class="dot"></div> ${statusText}</div></td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
@@ -161,7 +148,6 @@
             localStorage.setItem('view_candidate_data', JSON.stringify(student));
             window.location.href = '/candidate.html';
         }
-
         function logout() {
             if(confirm("Securely log out?")) {
                 localStorage.removeItem("proctor_auth_token");

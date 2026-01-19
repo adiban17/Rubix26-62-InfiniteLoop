@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ProctorHQ | Secure Launch</title>
+    <title>Sentinel | Secure Launch</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code&display=swap" rel="stylesheet">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="stylesheet" href="style.css">
     <style>
         body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         .launch-card { width: 100%; max-width: 600px; padding: 48px; position: relative; overflow: visible; }
-        
         .glow-back {
             position: absolute; width: 100%; height: 100%;
             background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1), transparent 70%);
@@ -25,11 +24,11 @@
         <div class="glow-back"></div>
         
         <div style="text-align: center; margin-bottom: 40px; position: relative; z-index: 2;">
-            <div style="width: 60px; height: 60px; margin: 0 auto 20px; background: rgba(99, 102, 241, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #a5b4fc; font-size: 2rem; border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);">
-                <ion-icon name="shield-checkmark"></ion-icon>
+            <div style="width: 70px; height: 70px; margin: 0 auto 20px; background: rgba(99, 102, 241, 0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; color: #a5b4fc; font-size: 2.5rem; border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);">
+                <ion-icon name="scan-outline"></ion-icon>
             </div>
-            <h1 style="font-size: 1.8rem; margin-bottom: 10px;">Secure Exam Environment</h1>
-            <p style="color: var(--text-muted);">ProctorHQ AI Watchdog Active</p>
+            <h1 class="brand-text" style="font-size: 1.8rem; margin-bottom: 10px;">SENTINEL</h1>
+            <p style="color: var(--text-muted);">Secure Exam Environment</p>
         </div>
 
         <div class="timeline-container">
@@ -46,7 +45,6 @@
                 <div class="step-content" style="width: 100%;">
                     <h3>Initialize Watchdog</h3>
                     <p>Launch the secure client via your terminal:</p>
-                    
                     <div class="terminal-window">
                         <div class="terminal-header">
                             <div class="win-dot win-red"></div>
@@ -67,14 +65,14 @@
                 <div class="step-num">3</div>
                 <div class="step-content">
                     <h3>Handshake</h3>
-                    <p>The application window will appear. Enter your credentials to begin.</p>
+                    <p>The Sentinel window will appear. Enter your credentials to begin.</p>
                 </div>
             </div>
         </div>
 
         <div class="glass-panel pulse-active" style="padding: 16px; display: flex; align-items: center; justify-content: center; gap: 12px; background: rgba(16, 185, 129, 0.05); border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
             <div class="dot" style="background: #10b981; box-shadow: 0 0 10px #10b981;"></div>
-            <span style="color: #34d399; font-weight: 600; font-size: 0.95rem;">Waiting for secure connection...</span>
+            <span style="color: #34d399; font-weight: 600; font-size: 0.95rem;">Waiting for connection...</span>
         </div>
         
         <div style="text-align: center; margin-top: 30px;">
@@ -88,12 +86,8 @@
         function copyCode() {
             navigator.clipboard.writeText("python proctor_app.py");
             const btn = document.querySelector('button ion-icon');
-            btn.name = "checkmark-outline";
-            btn.style.color = "#4ade80";
-            setTimeout(() => { 
-                btn.name = "copy-outline"; 
-                btn.style.color = "white"; 
-            }, 2000);
+            btn.name = "checkmark-outline"; btn.style.color = "#4ade80";
+            setTimeout(() => { btn.name = "copy-outline"; btn.style.color = "white"; }, 2000);
         }
     </script>
 </body>
