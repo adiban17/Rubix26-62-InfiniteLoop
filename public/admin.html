@@ -7,14 +7,26 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <script>
+        // --- SECURITY GATEKEEPER ---
+        if (!localStorage.getItem("proctor_auth_token")) {
+            window.location.href = "/";
+        }
+    </script>
+
     <div class="container">
         <header class="flex-between">
             <div>
                 <h1>ProctorHQ Monitor</h1>
                 <p class="subtitle">Real-time exam surveillance & integrity system</p>
             </div>
-            <div class="badge badge-success" id="server-status">
-                <div class="dot"></div> Server Online
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="badge badge-success" id="server-status">
+                    <div class="dot"></div> Online
+                </div>
+                <button onclick="logout()" style="background: white; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; cursor: pointer; color: var(--danger); font-weight: 600;">
+                    Log Out
+                </button>
             </div>
         </header>
 
@@ -40,11 +52,11 @@
             <table>
                 <thead>
                     <tr>
-                        <th width="30%">Candidate</th>
-                        <th width="15%">Roll No</th>
+                        <th width="25%">Candidate</th>
+                        <th width="10%">Roll No</th>
                         <th width="15%">SAP ID</th>
                         <th width="15%">Started At</th>
-                        <th width="25%">Live Status</th>
+                        <th width="15%">End Time</th> <th width="20%">Live Status</th>
                     </tr>
                 </thead>
                 <tbody id="student-table">
@@ -89,7 +101,10 @@
         });
 
         function updateStats() {
-            document.getElementById('count-active').innerText = currentStudents.length;
+            // Count "Online" students only (endTime is '-')
+            const activeCount = currentStudents.filter(s => s.endTime === '-').length;
+            document.getElementById('count-active').innerText = activeCount;
+            
             let vCount = 0;
             currentStudents.forEach(s => vCount += s.logs.length);
             document.getElementById('count-violations').innerText = vCount;
@@ -100,7 +115,7 @@
             tbody.innerHTML = '';
 
             if (currentStudents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--text-muted);">Waiting for candidates to join...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 60px; color: var(--text-muted);">Waiting for candidates to join...</td></tr>';
                 return;
             }
 
@@ -108,20 +123,34 @@
                 const initials = student.name.substring(0,2).toUpperCase();
                 const isWeb = student.name.includes("(WEB)");
                 
-                // --- NEW STATUS LOGIC ---
+                // --- STATUS BADGE LOGIC ---
                 let badgeClass = "badge-success";
                 let statusText = "Clean Record";
-                let dotColor = "currentColor";
 
-                // Priority 1: Currently Violating (RED)
                 if (student.riskScore && student.riskScore.includes("VIOLATION")) {
                     badgeClass = "badge-danger";
                     statusText = "Actively Cheating"; 
                 } 
-                // Priority 2: History of Violations (ORANGE)
                 else if (student.logs.length > 0) {
                     badgeClass = "badge-warning";
-                    statusText = `Flagged (${student.logs.length} alerts)`;
+                    statusText = `Flagged (${student.logs.length})`;
+                }
+
+                // If they are offline/disconnected, gray out the status
+                if (student.endTime !== '-') {
+                    badgeClass = "badge-neutral";
+                    if (student.logs.length > 0) statusText = `Finished (Flagged)`;
+                    else statusText = "Finished (Clean)";
+                }
+
+                // --- END TIME DISPLAY LOGIC ---
+                let endTimeDisplay = "";
+                if (student.endTime === '-') {
+                    // Show Green "Online" text
+                    endTimeDisplay = `<span style="color:var(--success); font-weight:600; font-size:0.9rem;">● Online</span>`;
+                } else {
+                    // Show Timestamp
+                    endTimeDisplay = `<span style="font-family:monospace; color:var(--text-muted);">${student.endTime}</span>`;
                 }
 
                 // Create the row
@@ -138,8 +167,8 @@
                     </td>
                     <td style="font-family: monospace; color: var(--text-muted);">${student.roll}</td>
                     <td style="font-family: monospace; color: var(--text-muted);">${student.sap}</td>
-                    <td>${student.startTime}</td>
-                    <td>
+                    <td style="font-family: monospace;">${student.startTime}</td>
+                    <td>${endTimeDisplay}</td> <td>
                         <div class="badge ${badgeClass}">
                             <div class="dot"></div> ${statusText}
                         </div>
@@ -149,7 +178,14 @@
             });
         }
 
-        // --- MODAL FUNCTIONS ---
+        // --- AUTH & MODAL FUNCTIONS ---
+        function logout() {
+            if(confirm("Securely log out?")) {
+                localStorage.removeItem("proctor_auth_token");
+                window.location.href = "/";
+            }
+        }
+
         function openModal(index) {
             selectedStudent = currentStudents[index];
             const list = document.getElementById('logList');
@@ -173,7 +209,10 @@
         
         function downloadLogs() {
             if(!selectedStudent) return;
-            let content = `Exam Report: ${selectedStudent.name}\nGenerated: ${new Date().toLocaleString()}\n\nVIOLATION LOGS:\n`;
+            let content = `Exam Report: ${selectedStudent.name}\nGenerated: ${new Date().toLocaleString()}\n`;
+            content += `Start: ${selectedStudent.startTime} | End: ${selectedStudent.endTime}\n`;
+            content += `-------------------------------------------\nVIOLATION LOGS:\n`;
+            
             if(selectedStudent.logs.length === 0) content += "None. Clean Record.";
             else selectedStudent.logs.forEach(l => content += `[${l.time}] ${l.violation}\n`);
             

@@ -97,11 +97,7 @@ td { padding: 16px 24px; font-size: 0.95rem; vertical-align: middle; }
     padding: 6px 12px; border-radius: 9999px;
     font-size: 0.8rem; font-weight: 600;
 }
-.badge-warning { 
-    background: #fff7ed; 
-    color: #c2410c; /* Orange 700 */
-    border: 1px solid #ffedd5;
-}
+
 .badge-success { background: var(--success-bg); color: var(--success); }
 .badge-danger { background: var(--danger-bg); color: var(--danger); animation: pulse-red 2s infinite; }
 .badge-neutral { background: #f1f5f9; color: var(--text-muted); }
@@ -133,3 +129,64 @@ td { padding: 16px 24px; font-size: 0.95rem; vertical-align: middle; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes popIn { to { transform: scale(1); } }
+
+/* --- LOGIN FORM STYLES --- */
+.login-card {
+    background: white;
+    padding: 40px;
+    border-radius: 24px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.input-group { text-align: left; margin-bottom: 20px; }
+.input-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+.input-field {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    color: var(--text-main);
+    transition: all 0.2s;
+}
+.input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+.btn-primary:hover { background: #4338ca; }
+
+.btn-secondary {
+    width: 100%;
+    padding: 12px;
+    background: #f1f5f9;
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-secondary:hover { background: #e2e8f0; }
+
+.divider { margin: 30px 0; border-top: 1px solid var(--border); position: relative; }
+.divider span { 
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%); 
+    background: white; padding: 0 10px; color: var(--text-muted); font-size: 0.8rem; 
+}

@@ -2,31 +2,176 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Exam Security Check</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>ProctorHQ | Secure Launch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Specific Styles for Launchpad */
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .launch-card {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .icon-header {
+            width: 80px; height: 80px;
+            background: #e0e7ff;
+            color: #4338ca;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 10px; color: var(--text-main); }
+        p { color: var(--text-muted); margin-bottom: 30px; line-height: 1.5; }
+
+        /* STEP LIST */
+        .step-list { text-align: left; margin-bottom: 30px; }
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+        .step-item:hover { background: #f8fafc; }
+        
+        .step-num {
+            background: var(--primary);
+            color: white;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-text h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; color: var(--text-main); }
+        .step-text p { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+        /* CODE BOX */
+        .code-box {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            border: 1px solid #334155;
+        }
+        
+        .code-text {
+            font-family: 'Fira Code', monospace;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.2); }
+        .copy-btn:active { transform: scale(0.95); }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-link:hover { color: var(--primary); }
+    </style>
 </head>
 <body>
-    <div class="lobby-box">
-        <div class="lobby-icon">🛡️</div>
-        <h2 style="margin-bottom: 10px;">Secure Exam Environment</h2>
-        <p style="color: #64748b; margin-bottom: 25px;">
-            This exam is monitored by ProctorHQ AI. Browsers are not supported for security reasons.
-        </p>
 
-        <div style="text-align: left; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <p style="font-weight: 600; margin-bottom: 10px; font-size: 0.9rem;">To Begin:</p>
-            <ol style="margin-left: 20px; font-size: 0.9rem; color: #475569; line-height: 1.8;">
-                <li>Close all unnecessary applications.</li>
-                <li>Open your terminal / command prompt.</li>
-                <li>Run the security client:</li>
-            </ol>
-            <span class="code-block">python proctor_app.py</span>
+    <div class="launch-card">
+        <div class="icon-header">
+            <ion-icon name="shield-checkmark"></ion-icon>
+        </div>
+        
+        <h1>Secure Exam Environment</h1>
+        <p>This exam is monitored by ProctorHQ AI. Web browsers are disabled for security integrity.</p>
+
+        <div class="step-list">
+            <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-text">
+                    <h3>Prepare your environment</h3>
+                    <p>Close all messaging apps, unused browser tabs, and music players.</p>
+                </div>
+            </div>
+
+            <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-text">
+                    <h3>Launch the Client</h3>
+                    <p>Open your terminal/command prompt and run the secure watchdog script.</p>
+                    
+                    <div class="code-box">
+                        <span class="code-text">python proctor_app.py</span>
+                        <button class="copy-btn" onclick="copyCode()" title="Copy to clipboard">
+                            <ion-icon name="copy-outline"></ion-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-text">
+                    <h3>Authenticate</h3>
+                    <p>Enter your details in the app window to connect to the session.</p>
+                </div>
+            </div>
         </div>
 
-        <p style="margin-top: 25px; font-size: 0.8rem; color: #94a3b8;">
-            Your status will automatically update on the proctor's dashboard once connected.
-        </p>
+        <div style="font-size: 0.85rem; color: var(--success); font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <div class="dot" style="background: var(--success);"></div> 
+            Waiting for connection...
+        </div>
+
+        <a href="/" class="back-link">← Back to Home</a>
     </div>
+
+    <script>
+        function copyCode() {
+            navigator.clipboard.writeText("python proctor_app.py");
+            
+            const btn = document.querySelector('.copy-btn');
+            const originalIcon = btn.innerHTML;
+            
+            // Visual Feedback
+            btn.innerHTML = '<ion-icon name="checkmark-outline" style="color: #4ade80;"></ion-icon>';
+            setTimeout(() => {
+                btn.innerHTML = originalIcon;
+            }, 2000);
+        }
+    </script>
 </body>
 </html>

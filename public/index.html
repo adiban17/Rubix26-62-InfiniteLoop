@@ -2,47 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ProctorHQ | Entrance</title>
+    <title>ProctorHQ | Secure Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .hero { text-align: center; max-width: 600px; margin: 80px auto; }
-        .hero h1 { font-size: 3.5rem; margin-bottom: 20px; line-height: 1.1; }
-        .hero p { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px; }
-        
-        .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 800px; margin: 0 auto; }
-        .role-card {
-            background: white; padding: 40px; border-radius: 24px;
-            border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-            text-align: center; text-decoration: none; color: var(--text-main);
-            transition: all 0.2s;
-        }
-        .role-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
-        .role-icon { font-size: 3rem; margin-bottom: 20px; display: inline-block; }
-        .role-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; }
-        .role-desc { font-size: 0.9rem; color: var(--text-muted); }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="hero">
-            <h1>Integrity,<br>Automated.</h1>
-            <p>The next-generation proctoring suite powered by Computer Vision and Real-time Behavior Analysis.</p>
+    <div class="container" style="display: flex; min-height: 80vh; align-items: center; justify-content: center;">
+        
+        <div class="login-card">
+            <div style="margin-bottom: 30px;">
+                <h1 style="font-size: 1.8rem; margin-bottom: 10px;">ProctorHQ</h1>
+                <p class="subtitle">Secure Examination Gateway</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label class="input-label">Admin ID</label>
+                    <input type="text" id="adminId" class="input-field" placeholder="Enter Admin ID" required>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Password</label>
+                    <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn-primary">Authenticate</button>
+            </form>
+
+            <div class="divider"><span>OR</span></div>
+
+            <div style="text-align: center;">
+                <p class="subtitle" style="margin-bottom: 15px;">Taking an exam?</p>
+                <a href="/student.html" class="btn-secondary">Launch Student Portal</a>
+            </div>
         </div>
 
-        <div class="role-grid">
-            <a href="/admin.html" class="role-card">
-                <span class="role-icon">⚡</span>
-                <div class="role-title">Admin Console</div>
-                <div class="role-desc">Monitor live exams, view violations, and generate evidence reports.</div>
-            </a>
-            
-            <a href="/student.html" class="role-card">
-                <span class="role-icon">🎓</span>
-                <div class="role-title">Student Portal</div>
-                <div class="role-desc">Launch the secure exam environment (Browser or App integration).</div>
-            </a>
-        </div>
     </div>
+
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('adminId').value;
+            const pass = document.getElementById('password').value;
+
+            // HARDCODED CREDENTIALS (Simple Check)
+            if (id === "admin" && pass === "password123") {
+                // Save "Key" to browser storage
+                localStorage.setItem("proctor_auth_token", "valid_session_key");
+                
+                // Redirect to Dashboard
+                window.location.href = "/admin.html";
+            } else {
+                alert("⛔ Access Denied: Invalid Credentials");
+                document.getElementById('password').value = ''; // Clear password
+            }
+        }
+    </script>
 </body>
 </html>
