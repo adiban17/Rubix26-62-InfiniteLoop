@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import socketio
+from ultralytics import YOLO
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from PIL import Image, ImageTk 
@@ -10,11 +11,12 @@ import time
 import threading
 import sys
 import os
+import platform
 
 # --- GLOBAL CONFIG ---
 ALLOWED_APPS = [
     "LeetCode", "ProctorHQ", "Exam Portal", "127.0.0.1", "localhost",
-    "python", "python3", "Terminal", "iTerm2", "Code", "Finder" 
+    "python", "python3", "Terminal", "iTerm2", "Code", "Finder", "Explorer"
 ]
 
 USER_DETAILS = {
@@ -56,6 +58,19 @@ class ProctorApp:
         # Colors & Network
         self.colors = {"primary": "#6366f1", "bg": "#ffffff", "text": "#1e293b", "danger": "#dc2626"}
         self.sio = socketio.Client()
+        
+        # --- 1. NEW ARCHITECTURE: Object Detection Layer ---
+        # We load the YOLO model here. It downloads 'yolov8n.pt' automatically 
+        # on the first run.
+        print("System: Loading Neural Network for Phone Detection...")
+        try:
+            self.object_detector = YOLO("yolov8n.pt") 
+            self.phone_class_id = 67 # Class ID for 'Cell Phone' in the COCO dataset
+        except Exception as e:
+            print(f"Warning: YOLO failed to load. Phone detection disabled. {e}")
+            self.object_detector = None
+        # ------------------------------------------------
+        
         self.setup_vision()
         
         # VISION STATE
@@ -67,6 +82,7 @@ class ProctorApp:
         # WATCHDOG STATE
         self.current_window_status = "Status: Initializing..."
         self.violation_counter = 0 
+        self.system_os = platform.system() # Detect OS (Darwin=Mac, Windows=Windows)
 
         self.setup_styles()
         self.build_login_ui()
@@ -88,6 +104,10 @@ class ProctorApp:
 
     # --- APPLE SCRIPT (Safe Version) ---
     def check_active_window(self):
+        # Crash Prevention: Only run AppleScript on Mac (Darwin)
+        if self.system_os != "Darwin":
+            return "OS-Not-Mac", "Unknown", ""
+
         script = '''
         try
             with timeout of 1 second
@@ -136,6 +156,10 @@ class ProctorApp:
         is_safe = False
         full_context = f"{app} {title} {url}".lower()
         
+        # If not Mac, we assume safe for now to prevent false flags
+        if self.system_os != "Darwin":
+            is_safe = True
+
         for safe_word in ALLOWED_APPS:
             if safe_word.lower() in full_context:
                 is_safe = True; break
@@ -153,6 +177,7 @@ class ProctorApp:
     # --- UI: LOGIN & TERMS ---
     def build_login_ui(self):
         for w in self.root.winfo_children(): w.destroy()
+        self.root.configure(bg=self.colors["bg"])
         
         header = tk.Frame(self.root, bg=self.colors["primary"], height=100)
         header.pack(fill="x")
@@ -221,7 +246,6 @@ class ProctorApp:
             
         if self.agree_var.get() == 0:
             messagebox.showwarning("Compliance", "You must accept the Terms & Conditions to proceed.")
-            # Optional: Open the popup automatically if they forgot
             self.show_terms_popup()
             return
 
@@ -233,13 +257,20 @@ class ProctorApp:
         except Exception as e:
             messagebox.showerror("Error", f"Server connection failed.\nIs Node.js running?\n\nError: {e}")
 
+    # --- 2. EXAM MODE UI UPDATES ---
     def start_exam_mode(self):
         for w in self.root.winfo_children(): w.destroy()
         self.root.configure(bg="black")
+        
+        # 1. Initialize Camera
         self.cap = cv2.VideoCapture(0)
-        self.is_exam_running = True
-        self.start_watchdog()
-
+        
+        # Optional: Check if camera actually opened
+        if not self.cap.isOpened():
+            messagebox.showerror("Camera Error", "Could not access webcam.\nPlease check permissions.")
+            return
+        
+        # Controls at the bottom
         controls = tk.Frame(self.root, bg="white", height=100)
         controls.pack(side=tk.BOTTOM, fill=tk.X)
         controls.pack_propagate(False)
@@ -247,15 +278,69 @@ class ProctorApp:
         info_frame = tk.Frame(controls, bg="white")
         info_frame.pack(side="left", padx=20, pady=10)
         
-        self.status_lbl = tk.Label(info_frame, text="Face: Calibrating...", font=("Segoe UI", 14, "bold"), fg="orange", bg="white", anchor="w")
+        self.status_lbl = tk.Label(info_frame, text="Status: Calibrating...", font=("Segoe UI", 14, "bold"), fg="orange", bg="white", anchor="w")
         self.status_lbl.pack(fill="x")
         self.window_lbl = tk.Label(info_frame, text="App Monitor: Active", font=("Segoe UI", 10), fg="#64748b", bg="white", anchor="w")
         self.window_lbl.pack(fill="x")
 
         ttk.Button(controls, text="END EXAM", style="Danger.TButton", command=self.end_exam).pack(side="right", padx=20)
+        
+        # Video Feed
         self.video_label = tk.Label(self.root, bg="black")
         self.video_label.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # Show the "START EXAM" button immediately
+        self.show_start_button()
+
+        # --- THE FIX: FLAG SET BEFORE LOOP STARTS ---
+        self.is_exam_running = True 
+        
+        # Start Video Loop
         self.process_video_loop()
+        
+        # Start Watchdog thread
+        self.start_watchdog()
+
+    # --- 3. THE NEW START BUTTON ---
+    def show_start_button(self):
+        self.start_btn = tk.Button(
+            self.root, 
+            text="START EXAM\n(Look at screen and click)", 
+            font=("Segoe UI", 16, "bold"), 
+            bg=self.colors["primary"], 
+            fg="white",
+            padx=30,
+            pady=15,
+            cursor="hand2",
+            command=self.start_exam_sequence
+        )
+        # Float button in center of screen
+        self.start_btn.place(relx=0.5, rely=0.5, anchor="center")
+
+    def start_exam_sequence(self):
+        """Called when user clicks the Start Button"""
+        if self.cap is None: return
+
+        # 1. Grab a single frame to calculate the pose
+        ret, frame = self.cap.read()
+        if ret:
+            image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = self.mp_face_mesh.process(image_rgb)
+            
+            if results.multi_face_landmarks:
+                # 2. Calculate the "Zero" position
+                pitch, yaw, _ = self.get_head_pose(frame, results.multi_face_landmarks[0], frame.shape[1], frame.shape[0])
+                
+                self.pitch_offset = pitch
+                self.yaw_offset = yaw
+                self.is_calibrated = True
+                
+                # 3. Remove the button
+                self.start_btn.destroy()
+                print("System: Calibration Complete. Monitoring Active.")
+                self.status_lbl.config(text="Status: Live Monitoring", fg="green")
+            else:
+                messagebox.showwarning("Calibration Failed", "Face not detected. Please look at the camera.")
 
     def process_video_loop(self):
         if not self.is_exam_running: return
@@ -265,11 +350,16 @@ class ProctorApp:
             processed_frame, face_status, face_color = self.analyze_frame(frame)
             final_status = face_status; final_color = face_color
             
+            # Prioritize Window Violations if OS check flagged something
             if "VIOLATION" in self.current_window_status:
-                final_status = self.current_window_status; final_color = "#dc2626"
+                final_status = self.current_window_status
+                final_color = "#dc2626"
 
             img = Image.fromarray(processed_frame)
-            win_h = self.root.winfo_height() - 100; win_w = self.root.winfo_width()
+            
+            # Smart Resize
+            win_h = self.root.winfo_height() - 100
+            win_w = self.root.winfo_width()
             if win_h > 1:
                 ratio = img.width / img.height
                 new_w = int(win_h * ratio)
@@ -279,42 +369,102 @@ class ProctorApp:
             imgtk = ImageTk.PhotoImage(image=img)
             self.video_label.imgtk = imgtk
             self.video_label.configure(image=imgtk)
-            self.status_lbl.config(text=final_status, fg=final_color)
+            
+            # Only update status text if calibrated
+            if self.is_calibrated:
+                self.status_lbl.config(text=final_status, fg=final_color)
+                
+                if final_status != self.last_sent_status:
+                    self.sio.emit('student-status-update', final_status)
+                    self.last_sent_status = final_status
+                    
             self.window_lbl.config(text=self.current_window_status)
             
-            if self.is_calibrated and final_status != self.last_sent_status:
-                self.sio.emit('student-status-update', final_status)
-                self.last_sent_status = final_status
         self.root.after(20, self.process_video_loop)
 
     def analyze_frame(self, image):
         img_h, img_w, _ = image.shape
-        status_text = "Status: Normal"; tk_color = "green" 
-        fd_results = self.mp_face_detection.process(image)
-        fm_results = self.mp_face_mesh.process(image)
+        status_text = "Status: Normal"
+        tk_color = "green" 
+        
+        # ---------------------------------------------------------
+        # 1. PHONE DETECTION LAYER (YOLOv8) - High Priority
+        # ---------------------------------------------------------
+        phone_detected = False
+        if self.object_detector:
+            # conf=0.5: Only detect if model is 50% sure
+            obj_results = self.object_detector(image, verbose=False, conf=0.5)
+            
+            for result in obj_results:
+                for box in result.boxes:
+                    # Check for Class ID 67 (Cell Phone)
+                    if int(box.cls) == self.phone_class_id:
+                        phone_detected = True
+                        status_text = "VIOLATION: PHONE DETECTED"
+                        tk_color = "#dc2626" # Red
+                        
+                        # Draw Red Box around the phone
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                        cv2.putText(image, "PHONE", (x1, y1 - 10), 
+                                  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+        # ---------------------------------------------------------
+        # 2. FACE PROCESSING LAYER (MediaPipe)
+        # ---------------------------------------------------------
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        fd_results = self.mp_face_detection.process(image_rgb)
+        fm_results = self.mp_face_mesh.process(image_rgb)
         
         face_count = 0
         if fd_results.detections:
             face_count = len(fd_results.detections)
-            for detection in fd_results.detections: self.mp_drawing.draw_detection(image, detection)
+            for detection in fd_results.detections: 
+                self.mp_drawing.draw_detection(image, detection)
 
+        # ---------------------------------------------------------
+        # 3. CALIBRATION CHECK
+        # ---------------------------------------------------------
         if not self.is_calibrated:
-            cv2.putText(image, "Look at screen & Press 'C'", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
-            return image, "Action Required: Press 'C' to Calibrate", "#f59e0b"
+            # We removed the "Press 'C'" text.
+            # If phone is seen, we flag it even before start.
+            if phone_detected:
+                return image, "VIOLATION: PHONE DETECTED", "#dc2626"
+            return image, "Action Required: Click Start Button", "#f59e0b"
         
-        if face_count == 0: return image, "VIOLATION: NO FACE", "#dc2626"
-        elif face_count > 1: return image, "VIOLATION: MULTIPLE FACES", "#dc2626"
+        # ---------------------------------------------------------
+        # 4. FACE & GAZE VIOLATION LOGIC
+        # ---------------------------------------------------------
+        
+        if face_count == 0: 
+            if not phone_detected:
+                return image, "VIOLATION: NO FACE", "#dc2626"
+                
+        elif face_count > 1: 
+            if not phone_detected:
+                return image, "VIOLATION: MULTIPLE FACES", "#dc2626"
+                
         elif face_count == 1 and fm_results.multi_face_landmarks:
             for face_landmarks in fm_results.multi_face_landmarks:
                 pitch, yaw, _ = self.get_head_pose(image, face_landmarks, img_w, img_h)
+                
+                # Smoothing factors
                 alpha = 0.2
                 self.smooth_pitch = (pitch * alpha) + (self.smooth_pitch * (1.0 - alpha))
                 self.smooth_yaw = (yaw * alpha) + (self.smooth_yaw * (1.0 - alpha))
+                
                 if self.is_calibrated:
                     final_pitch = self.smooth_pitch - self.pitch_offset
                     final_yaw = self.smooth_yaw - self.yaw_offset
-                    if abs(final_pitch) > 25: return image, "VIOLATION: LOOKING AWAY", "#dc2626"
-                    elif abs(final_yaw) > 40: return image, "VIOLATION: SIDEWAYS LOOK", "#dc2626"
+                    
+                    # Check Gaze limits
+                    if abs(final_pitch) > 25: 
+                        if not phone_detected:
+                            return image, "VIOLATION: LOOKING AWAY", "#dc2626"
+                    elif abs(final_yaw) > 40: 
+                        if not phone_detected:
+                            return image, "VIOLATION: SIDEWAYS LOOK", "#dc2626"
+
         return image, status_text, tk_color
 
     def get_head_pose(self, image, face_landmarks, img_w, img_h):
@@ -342,6 +492,5 @@ class ProctorApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = ProctorApp(root)
-    root.bind('<c>', lambda e: setattr(app, 'is_calibrated', True)) 
-    root.bind('<C>', lambda e: setattr(app, 'is_calibrated', True)) 
+    # Note: Keyboard bindings for calibration removed in favor of UI button
     root.mainloop()
