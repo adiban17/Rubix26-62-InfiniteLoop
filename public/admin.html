@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard-container { width: 90%; margin: 20px auto; font-family: sans-serif; }
+        h1 { text-align: center; color: #2c3e50; }
+        #status-msg { text-align: center; font-style: italic; color: #666; }
+        
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #2c3e50; color: white; }
+        tr:hover { background-color: #f5f5f5; }
+        
+        /* The specific style for cheaters */
+        .violation { background-color: #ffcccc !important; color: #a00000; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Live Proctor Dashboard</h1>
+        <p id="status-msg">Connecting to server...</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Roll No</th>
+                    <th>SAP ID</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Risk Score / Status</th>
+                </tr>
+            </thead>
+            <tbody id="student-table">
+                </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <script>
+        const socket = io();
+        const tableBody = document.getElementById('student-table');
+        const statusMsg = document.getElementById('status-msg');
+
+        // 1. connection Confirmation
+        socket.on('connect', () => {
+            statusMsg.innerText = "Connected to Server. Waiting for students...";
+            statusMsg.style.color = "green";
+        });
+
+        // 2. Handle Data Updates
+        socket.on('update-dashboard', (students) => {
+            tableBody.innerHTML = ''; 
+            
+            // Handle empty state
+            if (students.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #777;">No active students connected.</td></tr>';
+                return;
+            }
+
+            // Loop through students
+            students.forEach(student => {
+                let rowClass = "";
+                
+                // Color code the row based on risk (Your Logic)
+                if (student.riskScore && student.riskScore.includes("VIOLATION")) {
+                    rowClass = "violation";
+                }
+
+                const row = `<tr class="${rowClass}">
+                    <td>${student.name}</td>
+                    <td>${student.roll}</td>
+                    <td>${student.sap}</td>
+                    <td>${student.startTime}</td>
+                    <td>${student.endTime}</td>
+                    <td>${student.riskScore}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        });
+    </script>
+</body>
+</html>

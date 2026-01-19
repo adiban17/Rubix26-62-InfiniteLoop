@@ -1,0 +1,9 @@
+body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f9; text-align: center; }
+.container { max-width: 500px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+input { display: block; width: 90%; margin: 10px auto; padding: 10px; }
+button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px; }
+button.end-btn { background: #dc3545; }
+video { width: 100%; border-radius: 8px; margin-top: 15px; border: 2px solid #333; }
+table { width: 90%; margin: 20px auto; border-collapse: collapse; background: white; }
+th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+th { background-color: #343a40; color: white; }
