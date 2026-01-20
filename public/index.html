@@ -19,164 +19,96 @@
         <div style="display: flex; gap: 20px; align-items: center;">
             <a href="#features" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Features</a>
             <a href="#specs" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Specs</a>
-            <a href="/login.html" class="btn-primary" style="width: auto; padding: 10px 24px; box-shadow: none;">
+            <a href="/login.html" class="btn-primary" style="width: auto; padding: 10px 24px; font-size: 0.9rem;">
                 Admin Console
             </a>
         </div>
     </nav>
 
     <div class="container">
-        <header class="hero-section">
-            <div class="badge badge-neutral" style="margin-bottom: 24px; padding: 8px 16px;">
-                <div class="dot" style="background: #34d399; box-shadow: 0 0 10px #34d399;"></div> 
-                System Operational v2.4
+        
+        <div class="hero-section">
+            <div class="badge-pill">
+                <span class="dot"></span> v1.0 Stable Release
             </div>
-            
-            <h1 class="hero-title">The All-Seeing <br><span class="brand-text">Integrity Engine</span></h1>
-            
-            <p class="hero-desc">
-                Sentinel combines <strong>autonomous visual intelligence</strong> with neural network threat detection. 
-                The industry standard for uncompromised examination security.
+            <h1 class="hero-title">
+                The Future of <br>
+                <span class="gradient-text">Remote Integrity</span>
+            </h1>
+            <p class="hero-sub">
+                Sentinel combines computer vision, gaze tracking, and real-time anomaly detection 
+                to create the most secure exam environment possible.
             </p>
             
-            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
-                <a href="/student.html" class="btn-primary" style="width: auto; padding: 16px 40px;">
-                    Launch Exam Client
-                </a>
-                <a href="#deployment" class="btn-secondary" style="width: auto; padding: 16px 40px;">
-                    How It Works
+            <div style="display: flex; gap: 16px; justify-content: center; margin-top: 40px;">
+                <a href="/student.html" class="btn-primary">
+                    <ion-icon name="shield-checkmark-outline" style="margin-right: 8px;"></ion-icon>
+                    Student Login
                 </a>
             </div>
-        </header>
-    </div>
+        </div>
 
-    <div class="stats-banner">
-        <div class="stat-item">
-            <span class="stat-num">99.8%</span>
-            <span class="stat-sub">Threat Detection Rate</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-num">200ms</span>
-            <span class="stat-sub">Analysis Latency</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-num">AES-256</span>
-            <span class="stat-sub">Data Encryption</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-num">1M+</span>
-            <span class="stat-sub">Exams Secured</span>
-        </div>
-    </div>
-
-    <div class="container">
-        
-        <div id="features" class="section-spacer">
-            <div style="text-align: center; margin-bottom: 60px;">
-                <h2 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 10px;">Core Intelligence Grid</h2>
-                <p class="subtitle">Continuous Neural Verification Protocols</p>
+        <div id="features" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 80px;">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <ion-icon name="eye-outline"></ion-icon>
+                </div>
+                <h3>Gaze Tracking</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                    Advanced iris and head-pose estimation detects when a candidate looks away from the screen boundaries.
+                </p>
             </div>
-
-            <div class="feature-grid">
-                <div class="landing-card">
-                    <div class="lc-icon"><ion-icon name="eye-outline"></ion-icon></div>
-                    <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px; color: white;">Gaze Analysis</h3>
-                    <p style="color: var(--text-muted); line-height: 1.6;">
-                        Real-time iris tracking algorithms detect off-screen referencing, tracking gaze vectors to identify unauthorized focus shifts with high precision.
-                    </p>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e;">
+                    <ion-icon name="phone-portrait-outline"></ion-icon>
                 </div>
-
-                <div class="landing-card">
-                    <div class="lc-icon"><ion-icon name="scan-circle-outline"></ion-icon></div>
-                    <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px; color: white;">Object Recognition</h3>
-                    <p style="color: var(--text-muted); line-height: 1.6;">
-                        YOLO-based computer vision instantly flags prohibited items such as mobile devices, textbooks, and additional unauthorized personnel in the frame.
-                    </p>
+                <h3>Object Detection</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                    YOLOv8 neural networks identify prohibited items like mobile phones or additional persons in the frame.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
+                    <ion-icon name="layers-outline"></ion-icon>
                 </div>
-
-                <div class="landing-card">
-                    <div class="lc-icon"><ion-icon name="lock-closed-outline"></ion-icon></div>
-                    <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px; color: white;">Environment Lockdown</h3>
-                    <p style="color: var(--text-muted); line-height: 1.6;">
-                        Full operating system hook prevents tab switching, virtual machines, remote desktops, and clipboard usage during active sessions.
-                    </p>
-                </div>
+                <h3>Window Security</h3>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                    OS-level monitoring detects tab switching and unauthorized applications instantly.
+                </p>
             </div>
         </div>
 
-        <div id="deployment" class="section-spacer" style="border-top: 1px solid var(--glass-border);">
-            <div style="text-align: center; margin-bottom: 60px;">
-                <h2 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 10px;">Deployment Architecture</h2>
-                <p class="subtitle">Seamless Integration Pipeline</p>
-            </div>
-
-            <div class="process-grid">
-                <div class="process-step">
-                    <div class="p-num">01</div>
-                    <div class="p-content">
-                        <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px;">Calibration</h3>
-                        <p style="color: var(--text-muted);">
-                            The candidate initializes the Sentinel client. The system performs a 3D environment scan and establishes a biometric baseline.
-                        </p>
-                    </div>
-                </div>
-                <div class="process-step">
-                    <div class="p-num">02</div>
-                    <div class="p-content">
-                        <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px;">Monitoring</h3>
-                        <p style="color: var(--text-muted);">
-                            Video feeds are processed locally to ensure privacy. Only flagged anomaly metadata is encrypted and transmitted to the admin server.
-                        </p>
-                    </div>
-                </div>
-                <div class="process-step">
-                    <div class="p-num">03</div>
-                    <div class="p-content">
-                        <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px;">Analysis</h3>
-                        <p style="color: var(--text-muted);">
-                            Administrators receive real-time alerts. Post-exam, a comprehensive forensic report is generated with time-stamped evidence.
-                        </p>
-                    </div>
+        <div id="specs" class="glass-panel" style="padding: 0; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden;">
+            <div style="padding: 60px; display: flex; flex-direction: column; justify-content: center;">
+                <h2 style="font-size: 2rem; margin-bottom: 20px;">Technical<br>Specifications</h2>
+                <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 30px;">
+                    Built on a modern stack utilizing Python for heavy inference and Node.js for real-time signaling. 
+                    Our system is designed to run efficiently on standard consumer hardware.
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <span class="badge badge-neutral">Python 3.9+</span>
+                    <span class="badge badge-neutral">Node.js</span>
+                    <span class="badge badge-neutral">OpenCV</span>
                 </div>
             </div>
-        </div>
-
-        <div id="specs" class="section-spacer">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
-                <div>
-                    <h2 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 20px;">Neural Engine Specification</h2>
-                    <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 30px;">
-                        Sentinel operates on a proprietary lightweight neural architecture designed for edge computing. This ensures minimal bandwidth usage while maintaining high-fidelity threat detection.
-                    </p>
-                    <a href="#" style="color: var(--primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                        Read Documentation <ion-icon name="arrow-forward-outline"></ion-icon>
-                    </a>
-                </div>
-                
-                <div class="tech-spec-container">
+            
+            <div style="background: rgba(0,0,0,0.2); padding: 60px; border-left: 1px solid var(--glass-border);">
+                <div class="specs-grid">
                     <div class="spec-row">
-                        <span class="spec-key">Architecture</span>
-                        <span class="spec-val">CNN + LSTM Hybrid</span>
-                    </div>
-                    <div class="spec-row">
-                        <span class="spec-key">Model Precision</span>
-                        <span class="spec-val">FP16 Quantized</span>
-                    </div>
-                    <div class="spec-row">
-                        <span class="spec-key">Inference Time</span>
-                        <span class="spec-val">&lt; 15ms / Frame</span>
+                        <span class="spec-key">Neural Engine</span>
+                        <span class="spec-val">YOLOv8 + MediaPipe</span>
                     </div>
                     <div class="spec-row">
                         <span class="spec-key">Protocol</span>
-                        <span class="spec-val">WebRTC / WebSocket Secure</span>
+                        <span class="spec-val">Socket.IO (WebSockets)</span>
                     </div>
                     <div class="spec-row">
-                        <span class="spec-key">Security Standard</span>
-                        <span class="spec-val">SOC2 Type II</span>
+                        <span class="spec-key">Vision Tech</span>
+                        <span class="spec-val">Adaptive Night Vision</span>
                     </div>
                     <div class="spec-row">
-                        <span class="spec-key">Min. Bandwidth</span>
-                        <span class="spec-val">512 kbps</span>
+                        <span class="spec-key">Risk Analysis</span>
+                        <span class="spec-val">Real-time Gaze & Object</span>
                     </div>
                 </div>
             </div>
@@ -190,6 +122,7 @@
             </div>
             <p>&copy; 2026 Sentinel Security Systems. All rights reserved.</p>
         </footer>
+
     </div>
 </body>
 </html>
