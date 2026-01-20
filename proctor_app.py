@@ -424,7 +424,29 @@ class ProctorApp:
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             processed_frame, raw_violation_code = self.analyze_frame(frame, frame_rgb)
             
-            # --- STATUS DECISION LOGIC ---
+            # --- STATUS MAPPING FOR DASHBOARD (MAX RISK LOGIC) ---
+            # Default "Safe" States
+            socket_gaze = "looking-center"
+            socket_phone = False
+            socket_face_count = 1
+            
+            # Map the priority code from analyze_frame to the socket states
+            if raw_violation_code == "PHONE":
+                socket_phone = True
+            elif raw_violation_code == "MULTIPLE_FACES":
+                socket_face_count = 2
+            elif raw_violation_code == "NO_FACE":
+                socket_face_count = 0
+            elif raw_violation_code in ["LOOKING_AWAY", "LOOKING_UP", "GAZE_ISSUE", "LOOKING_AWAY_EYES", "HYBRID SIDE TRAP", "LOOKING_DOWN_SUSPICIOUS"]:
+                socket_gaze = "looking-away"
+
+            # Emit Real-time Stats for Speedometer
+            if self.is_calibrated:
+                self.sio.emit('proctor_update', {'type': 'gaze', 'status': socket_gaze})
+                self.sio.emit('proctor_update', {'type': 'object', 'name': 'cell phone', 'detected': socket_phone})
+                self.sio.emit('proctor_update', {'type': 'face_count', 'count': socket_face_count})
+
+            # --- STATUS DECISION LOGIC (Internal UI) ---
             if "VIOLATION" in self.current_window_status:
                 self.confirmed_status = self.current_window_status
                 self.confirmed_color = self.colors["danger"]
@@ -463,7 +485,7 @@ class ProctorApp:
             self.video_label.imgtk = imgtk
             self.video_label.configure(image=imgtk)
             
-            # --- EMIT STATUS & EVIDENCE ---
+            # --- EMIT EVIDENCE (Rate Limited via Status Change) ---
             if self.is_calibrated:
                 self.status_lbl.config(text=self.confirmed_status, fg=self.confirmed_color)
                 self.window_lbl.config(text=self.current_window_status.upper())
@@ -471,13 +493,11 @@ class ProctorApp:
                 if self.confirmed_status != self.last_sent_status:
                     payload = {"status": self.confirmed_status, "image": None}
                     
-                    # Capture evidence ONLY if it's a vision violation (not a window violation)
-                    # Window violations are text-only to save bandwidth/confusion
                     is_window_violation = (self.confirmed_status == self.current_window_status)
                     
                     if "VIOLATION" in self.confirmed_status and not is_window_violation:
                         try:
-                            # Encode the processed frame (which includes the bounding boxes/text)
+                            # Encode evidence frame
                             _, buffer = cv2.imencode('.jpg', processed_frame)
                             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
                             payload["image"] = jpg_as_text
