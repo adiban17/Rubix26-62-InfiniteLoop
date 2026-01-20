@@ -5,19 +5,18 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+    maxHttpBufferSize: 1e8 // Increase buffer for image uploads
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// DATABASE (In-Memory)
 // Structure: { socketId: { name, roll, logs: [], ... } }
 let activeStudents = {};
 
 io.on('connection', (socket) => {
-    // 1. Send current data to new admins
     socket.emit('update-dashboard', Object.values(activeStudents));
 
-    // 2. Student Connects
     socket.on('student-connect', (data) => {
         activeStudents[socket.id] = {
             id: socket.id,
@@ -27,22 +26,32 @@ io.on('connection', (socket) => {
             startTime: new Date().toLocaleTimeString(),
             endTime: '-',
             riskScore: 'Normal',
-            logs: [] // <-- NEW: Array to store violation history
+            logs: [] 
         };
         io.emit('update-dashboard', Object.values(activeStudents));
     });
 
-    // 3. Status Update (The Logging Engine)
-    socket.on('student-status-update', (statusText) => {
+    // 3. Status Update (Enhanced for Evidence)
+    socket.on('student-status-update', (payload) => {
         if (activeStudents[socket.id]) {
             const student = activeStudents[socket.id];
+            
+            // Handle both legacy (string) and new (object) payloads
+            let statusText = payload;
+            let evidenceImage = null;
+
+            if (typeof payload === 'object' && payload !== null) {
+                statusText = payload.status;
+                evidenceImage = payload.image;
+            }
+
             student.riskScore = statusText;
 
-            // Log if it's a violation
             if (statusText.includes("VIOLATION")) {
                 const logEntry = {
                     time: new Date().toLocaleTimeString(),
-                    violation: statusText
+                    violation: statusText,
+                    evidence: evidenceImage // Store base64 image or null
                 };
                 student.logs.push(logEntry);
             }
@@ -51,7 +60,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 4. Handle Disconnect
     socket.on('disconnect', () => {
         if (activeStudents[socket.id]) {
             activeStudents[socket.id].endTime = new Date().toLocaleTimeString();

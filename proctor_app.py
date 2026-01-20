@@ -12,6 +12,7 @@ import threading
 import os
 import platform
 import math
+import base64
 
 # --- GLOBAL CONFIG ---
 ALLOWED_APPS = [
@@ -27,9 +28,9 @@ USER_DETAILS = {
 
 # --- SECURITY THRESHOLDS ---
 THRESHOLDS = {
-    "PHONE": 0.0,           # CHANGED: 0.5 -> 0.0 for instant violation on detection
+    "PHONE": 0.0,           # Instant violation
     "LOOKING_AWAY": 1.0,    
-    "GAZE_ISSUE": 0.5,      # Fast reaction for eye deviations
+    "GAZE_ISSUE": 0.5,      
     "NO_FACE": 2.5,         
     "MULTIPLE_FACES": 2.0,  
     "NORMAL": 0.0
@@ -37,28 +38,22 @@ THRESHOLDS = {
 
 # --- SENSITIVITY CALIBRATION ---
 # 1. HEAD ANGLES (Degrees)
-MAX_PITCH_DOWN = 12   # Looking Down limit
-MAX_PITCH_UP = 25     # Looking Up limit
-MAX_YAW = 20          # STRICTER: Reduced from 30 -> 20 degrees for side checks
+MAX_PITCH_DOWN = 12   
+MAX_PITCH_UP = 25     
+MAX_YAW = 20          
 
 # 2. GAZE SENSITIVITY (Dynamic)
-# We capture "Normal" ratios during calibration.
-# Vertical Drop > 0.12 = Looking Down
 GAZE_DROP_THRESH_VERT = 0.12  
-# Horizontal Deviation > 0.10 = Looking Left/Right (Side Eye)
 GAZE_DEV_THRESH_HORIZ = 0.10  
 
-# 3. HYBRID TRAPS (The "Sneaky" Checks)
-# Down Trap: Head slightly down + Eyes slightly down
+# 3. HYBRID TRAPS
 COMBO_PITCH_DOWN = 5      
 COMBO_GAZE_DOWN = 0.08      
-
-# Side Trap: Head slightly turned + Eyes slightly side-glancing
-COMBO_YAW = 10              # 10 degrees turn
-COMBO_GAZE_HORIZ = 0.06     # Tiny side glance
+COMBO_YAW = 10              
+COMBO_GAZE_HORIZ = 0.06     
 
 # --- LOW LIGHT CONFIG ---
-MIN_BRIGHTNESS = 90  # Threshold to trigger Night Vision
+MIN_BRIGHTNESS = 90  
 
 TERMS_TEXT = """PROCTORHQ CANDIDATE AGREEMENT
 
@@ -120,13 +115,13 @@ class ProctorApp:
         
         # VISION STATE
         self.is_calibrated = False
-        # Calibration Baselines
         self.pitch_offset = 0
         self.yaw_offset = 0
         self.baseline_gaze_vert = 0.5 
         self.baseline_gaze_horiz = 0.5 
         
-        self.smooth_pitch = 0; self.smooth_yaw = 0
+        self.smooth_pitch = 0
+        self.smooth_yaw = 0
         self.last_sent_status = ""
         self.cap = None
         
@@ -145,8 +140,7 @@ class ProctorApp:
         self.build_login_ui()
 
     def setup_vision(self):
-        # High confidence for precision gaze tracking
-        self.mp_face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.7, model_selection=0)
+        self.mp_face_detection = mp.solutions.face_detection.FaceDetection(min_detection_confidence=0.7)
         self.mp_face_mesh = mp.solutions.face_mesh.FaceMesh(
             min_detection_confidence=0.7, 
             min_tracking_confidence=0.7, 
@@ -230,8 +224,6 @@ class ProctorApp:
     def update_window_status(self):
         app, title, url = self.check_active_window()
         
-        # --- FIX 1: IGNORE UNKNOWN APPS ---
-        # If the OS cannot determine the window (Unknown), we assume innocence
         if app == "Unknown":
             self.violation_counter = 0
             if "VIOLATION" in self.current_window_status:
@@ -355,32 +347,18 @@ class ProctorApp:
                                    font=("Segoe UI", 9, "bold"), fg=self.colors["subtext"], bg=self.colors["card"], anchor="w")
         self.window_lbl.pack(fill="x")
 
-        # --- FIX 2: DYNAMIC ACTION BUTTON ---
-        # Initially set to "START EXAM" with Blue style
-        self.action_btn = ttk.Button(hud_frame, text="START EXAM", style="Modern.TButton", command=self.start_exam_sequence)
+        # Dynamic Action Button
+        self.action_btn = ttk.Button(hud_frame, text="START EXAM", style="Modern.TButton", command=self.start_calibration)
         self.action_btn.pack(side="right", padx=30)
 
         self.video_label = tk.Label(self.root, bg="black")
         self.video_label.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         
-        # REMOVED: self.show_start_button() <-- We don't want the center button anymore
-        
         self.is_exam_running = True 
         self.process_video_loop()
         self.start_watchdog()
 
-    def show_start_button(self):
-        self.start_btn = tk.Button(
-            self.root, 
-            text="INITIALIZE GAZE & HEAD\n(Look at camera center and click)", 
-            font=("Segoe UI", 16, "bold"), bg=self.colors["primary"], fg="white",
-            activebackground=self.colors["primary_hover"], activeforeground="white",
-            padx=40, pady=20, relief="flat", cursor="hand2",
-            command=self.start_exam_sequence
-        )
-        self.start_btn.place(relx=0.5, rely=0.5, anchor="center")
-
-    def start_exam_sequence(self):
+    def start_calibration(self):
         if self.cap is None: return
         ret, frame = self.cap.read()
         if ret:
@@ -402,8 +380,7 @@ class ProctorApp:
                 
                 self.is_calibrated = True
                 
-                # --- FIX 2: UPDATE BUTTON STATE ---
-                # Change button to "SUBMIT & EXIT" and switch to Danger (Red) style
+                # Change button to "SUBMIT & EXIT"
                 self.action_btn.configure(text="SUBMIT & EXIT", style="Danger.TButton", command=self.end_exam)
                 
                 print(f"System: Calibrated. Pitch:{pitch:.1f}, VertGaze:{base_vert:.2f}, HorizGaze:{base_horiz:.2f}")
@@ -413,24 +390,19 @@ class ProctorApp:
                 messagebox.showwarning("Calibration Failed", "Face not detected. Adjust lighting.")
 
     def enhance_low_light(self, frame):
-        """
-        Adaptive Night Vision: Automatically applies Gamma Correction & CLAHE
-        if the frame brightness is below threshold.
-        """
-        # 1. Check Brightness
+        # Adaptive Night Vision
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         h, s, v = cv2.split(hsv)
         avg_brightness = np.mean(v)
         
         if avg_brightness < MIN_BRIGHTNESS:
-            # 2. Gamma Correction (Mid-tone boost)
+            # Gamma Correction
             gamma = 1.5
             invGamma = 1.0 / gamma
             table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
             frame = cv2.LUT(frame, table)
             
-            # 3. CLAHE (Local Contrast Enhancement)
-            # Apply only to V channel to preserve color balance
+            # CLAHE on V channel
             hsv_gamma = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             h_g, s_g, v_g = cv2.split(hsv_gamma)
             
@@ -440,7 +412,6 @@ class ProctorApp:
             hsv_final = cv2.merge([h_g, s_g, v_enhanced])
             frame = cv2.cvtColor(hsv_final, cv2.COLOR_HSV2BGR)
             
-            # Indicator
             cv2.putText(frame, "NIGHT VISION", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             
         return frame
@@ -449,22 +420,21 @@ class ProctorApp:
         if not self.is_exam_running: return
         success, frame = self.cap.read()
         if success:
-            # 1. PRE-PROCESS (Night Vision)
             frame = self.enhance_low_light(frame)
-            
-            # 2. ANALYZE
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # For MediaPipe
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             processed_frame, raw_violation_code = self.analyze_frame(frame, frame_rgb)
             
-            # 3. DEBOUNCE LOGIC
+            # --- STATUS DECISION LOGIC ---
             if "VIOLATION" in self.current_window_status:
                 self.confirmed_status = self.current_window_status
                 self.confirmed_color = self.colors["danger"]
             else:
                 current_time = time.time()
                 if raw_violation_code == "NORMAL":
-                    self.potential_violation_type = None; self.violation_start_time = None
-                    self.confirmed_status = "SYSTEM: ACTIVE"; self.confirmed_color = self.colors["success"]
+                    self.potential_violation_type = None
+                    self.violation_start_time = None
+                    self.confirmed_status = "SYSTEM: ACTIVE"
+                    self.confirmed_color = self.colors["success"]
                 else:
                     if self.potential_violation_type == raw_violation_code:
                         elapsed_time = current_time - self.violation_start_time
@@ -477,10 +447,7 @@ class ProctorApp:
                         self.potential_violation_type = raw_violation_code
                         self.violation_start_time = current_time
             
-            # 4. RENDER
-            # Convert back to PIL from BGR (OpenCV)
-            # Wait, processed_frame comes from analyze_frame which draws on the 'frame' passed to it.
-            # If we passed 'frame' (BGR), we need to convert to RGB for PIL.
+            # --- RENDER VIDEO ---
             img_rgb = cv2.cvtColor(processed_frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(img_rgb)
             
@@ -496,13 +463,31 @@ class ProctorApp:
             self.video_label.imgtk = imgtk
             self.video_label.configure(image=imgtk)
             
+            # --- EMIT STATUS & EVIDENCE ---
             if self.is_calibrated:
                 self.status_lbl.config(text=self.confirmed_status, fg=self.confirmed_color)
+                self.window_lbl.config(text=self.current_window_status.upper())
+
                 if self.confirmed_status != self.last_sent_status:
-                    self.sio.emit('student-status-update', self.confirmed_status)
+                    payload = {"status": self.confirmed_status, "image": None}
+                    
+                    # Capture evidence ONLY if it's a vision violation (not a window violation)
+                    # Window violations are text-only to save bandwidth/confusion
+                    is_window_violation = (self.confirmed_status == self.current_window_status)
+                    
+                    if "VIOLATION" in self.confirmed_status and not is_window_violation:
+                        try:
+                            # Encode the processed frame (which includes the bounding boxes/text)
+                            _, buffer = cv2.imencode('.jpg', processed_frame)
+                            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+                            payload["image"] = jpg_as_text
+                            print(f"System: Captured evidence for {self.confirmed_status}")
+                        except Exception as e:
+                            print(f"Error capturing evidence: {e}")
+
+                    self.sio.emit('student-status-update', payload)
                     self.last_sent_status = self.confirmed_status
-            self.window_lbl.config(text=self.current_window_status.upper())
-            
+
         self.root.after(20, self.process_video_loop)
 
     # --- GAZE ENGINE ---
@@ -514,11 +499,9 @@ class ProctorApp:
         return (int(x_total / len(idx_list)), int(y_total / len(idx_list)))
 
     def check_gaze(self, landmarks, img_w, img_h):
-        # 1. Get Coordinates
         left_iris = self.get_iris_center(landmarks, [468], img_w, img_h)
         right_iris = self.get_iris_center(landmarks, [473], img_w, img_h)
         
-        # --- VERTICAL GAZE ---
         l_top = landmarks.landmark[159].y * img_h
         l_bot = landmarks.landmark[145].y * img_h
         l_eye_h = l_bot - l_top
@@ -534,22 +517,16 @@ class ProctorApp:
         r_v_ratio = r_dist_to_bot / r_eye_h if r_eye_h > 0 else 0
         avg_vert_ratio = (l_v_ratio + r_v_ratio) / 2
         
-        # --- HORIZONTAL GAZE (New) ---
-        # Left Eye (User's Left): Outer(33), Inner(133), Iris(468)
-        # Note: In screen coords, 33 is Left, 133 is Right (relative to eye box)
         l_outer_x = landmarks.landmark[33].x * img_w
         l_inner_x = landmarks.landmark[133].x * img_w
         l_iris_x = landmarks.landmark[468].x * img_w
         l_width = l_inner_x - l_outer_x
-        # Ratio 0 = Looking Left, 1 = Looking Right
         l_h_ratio = (l_iris_x - l_outer_x) / l_width if l_width > 0 else 0.5
         
-        # Right Eye (User's Right): Inner(362), Outer(263), Iris(473)
         r_inner_x = landmarks.landmark[362].x * img_w
         r_outer_x = landmarks.landmark[263].x * img_w
         r_iris_x = landmarks.landmark[473].x * img_w
         r_width = r_outer_x - r_inner_x
-        # Ratio 0 = Looking Left, 1 = Looking Right
         r_h_ratio = (r_iris_x - r_inner_x) / r_width if r_width > 0 else 0.5
         
         avg_horiz_ratio = (l_h_ratio + r_h_ratio) / 2
@@ -557,14 +534,12 @@ class ProctorApp:
         return left_iris, right_iris, avg_vert_ratio, avg_horiz_ratio
 
     def analyze_frame(self, display_image, processing_image):
-        # display_image is BGR, processing_image is RGB
         img_h, img_w, _ = display_image.shape
         detection_code = "NORMAL"
         
         # 1. PHONE DETECTION
         phone_detected = False
         if self.object_detector:
-            # YOLO works best on BGR
             obj_results = self.object_detector(display_image, verbose=False, conf=0.3, classes=[self.phone_class_id])
             for result in obj_results:
                 if len(result.boxes) > 0:
@@ -592,7 +567,6 @@ class ProctorApp:
         elif face_count == 1 and fm_results.multi_face_landmarks:
             landmarks = fm_results.multi_face_landmarks[0]
             
-            # --- GAZE & HEAD ---
             l_iris, r_iris, vert_ratio, horiz_ratio = self.check_gaze(landmarks, img_w, img_h)
             pitch, yaw, _ = self.get_head_pose(display_image, landmarks, img_w, img_h)
             
@@ -601,37 +575,27 @@ class ProctorApp:
             final_pitch = self.smooth_pitch - self.pitch_offset
             final_yaw = self.smooth_yaw - self.yaw_offset
             
-            # Draw Gaze Points
             cv2.circle(display_image, l_iris, 2, (0, 255, 0), -1)
             cv2.circle(display_image, r_iris, 2, (0, 255, 0), -1)
             
-            # --- VIOLATION LOGIC (UPDATED) ---
-            
-            # A. Looking Sideways (Hard Limit - TIGHTENED to 20)
             if abs(final_yaw) > MAX_YAW: return display_image, "LOOKING_AWAY"
             
-            # B. Looking Down (Hard Pitch Limit)
             if final_pitch > MAX_PITCH_DOWN: return display_image, "LOOKING_UP"
             
-            # C. Vertical Gaze Drop (Looking Down with Eyes)
             gaze_drop = self.baseline_gaze_vert - vert_ratio
             if gaze_drop > GAZE_DROP_THRESH_VERT and final_pitch > -10: 
                  cv2.putText(display_image, f"V-GAZE DROP: {gaze_drop:.2f}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
                  return display_image, "GAZE_ISSUE"
 
-            # D. Lateral Gaze Deviation (The "Look Left" Fix)
-            # Deviation from baseline horizontal ratio
             horiz_dev = abs(self.baseline_gaze_horiz - horiz_ratio)
             if horiz_dev > GAZE_DEV_THRESH_HORIZ:
                 cv2.putText(display_image, f"H-GAZE DEV: {horiz_dev:.2f}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
                 return display_image, "LOOKING_AWAY_EYES"
 
-            # E. HYBRID SIDE TRAP (Slight Turn + Slight Glance)
             if abs(final_yaw) > COMBO_YAW and horiz_dev > COMBO_GAZE_HORIZ:
                 cv2.putText(display_image, "HYBRID SIDE TRAP", (50, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
                 return display_image, "LOOKING_SIDEWAYS_SUSPICIOUS"
 
-            # F. HYBRID DOWN TRAP
             if final_pitch > COMBO_PITCH_DOWN and gaze_drop > COMBO_GAZE_DOWN:
                 return display_image, "LOOKING_DOWN_SUSPICIOUS"
 

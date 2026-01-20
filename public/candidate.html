@@ -97,12 +97,25 @@
                 let iconName = "alert-circle-outline";
                 if(log.violation.toLowerCase().includes("phone")) iconName = "phone-portrait-outline";
                 if(log.violation.toLowerCase().includes("person")) iconName = "people-outline";
+                
+                // Add Image if available
+                let evidenceHtml = '';
+                if (log.evidence) {
+                    evidenceHtml = `
+                    <div style="margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border);">
+                        <img src="data:image/jpeg;base64,${log.evidence}" style="width: 100%; display: block;" alt="Evidence">
+                    </div>`;
+                }
+
                 feed.innerHTML += `
-                <div class="feed-item">
-                    <div class="feed-icon"><ion-icon name="${iconName}"></ion-icon></div>
-                    <div class="feed-content">
-                        <div class="feed-title">${log.violation}</div>
-                        <div class="feed-time">${log.time}</div>
+                <div class="feed-item" style="display: block;">
+                    <div style="display: flex; gap: 15px;">
+                        <div class="feed-icon"><ion-icon name="${iconName}"></ion-icon></div>
+                        <div class="feed-content" style="width: 100%;">
+                            <div class="feed-title">${log.violation}</div>
+                            <div class="feed-time">${log.time}</div>
+                            ${evidenceHtml}
+                        </div>
                     </div>
                 </div>`;
             });
@@ -144,7 +157,7 @@
 
         function downloadReport() {
             let content = `SENTINEL EVIDENCE LOG: ${studentData.name} (${studentData.sap})\nGenerated: ${new Date().toLocaleString()}\n\nTIMELINE:\n`;
-            studentData.logs.forEach(l => content += `[${l.time}] ${l.violation}\n`);
+            studentData.logs.forEach(l => content += `[${l.time}] ${l.violation} ${l.evidence ? '(Image Evidence Attached in Dashboard)' : ''}\n`);
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([content], {type:'text/plain'}));
             a.download = `Evidence_${studentData.sap}.txt`;
