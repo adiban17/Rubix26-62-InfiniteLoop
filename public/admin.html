@@ -47,12 +47,7 @@
                 <div class="stat-label">Violations Detected</div>
                 <div class="stat-value" id="count-violations" style="color: #fb7185; text-shadow: 0 0 20px rgba(244, 63, 94, 0.3);">0</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">⏱️</div>
-                <div class="stat-label">Session Duration</div>
-                <div class="stat-value" id="session-time" style="font-variant-numeric: tabular-nums;">00:00</div>
             </div>
-        </div>
 
         <div class="glass-panel table-wrapper">
             <table>
@@ -77,13 +72,7 @@
         const socket = io();
         let currentStudents = [];
         
-        let seconds = 0;
-        setInterval(() => {
-            seconds++;
-            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const secs = (seconds % 60).toString().padStart(2, '0');
-            document.getElementById('session-time').innerText = `${mins}:${secs}`;
-        }, 1000);
+        // REMOVED: setInterval logic for session timer
 
         socket.on('update-dashboard', (students) => {
             currentStudents = students;

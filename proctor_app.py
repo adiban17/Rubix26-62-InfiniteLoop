@@ -27,7 +27,7 @@ USER_DETAILS = {
 
 # --- SECURITY THRESHOLDS ---
 THRESHOLDS = {
-    "PHONE": 0.5,           
+    "PHONE": 0.0,           # CHANGED: 0.5 -> 0.0 for instant violation on detection
     "LOOKING_AWAY": 1.0,    
     "GAZE_ISSUE": 0.5,      # Fast reaction for eye deviations
     "NO_FACE": 2.5,         
@@ -229,12 +229,24 @@ class ProctorApp:
 
     def update_window_status(self):
         app, title, url = self.check_active_window()
+        
+        # --- FIX 1: IGNORE UNKNOWN APPS ---
+        # If the OS cannot determine the window (Unknown), we assume innocence
+        if app == "Unknown":
+            self.violation_counter = 0
+            if "VIOLATION" in self.current_window_status:
+                self.current_window_status = "Status: Normal"
+            return 
+
         is_safe = False
         full_context = f"{app} {title} {url}".lower()
+        
         if self.system_os != "Darwin": is_safe = True
+        
         for safe_word in ALLOWED_APPS:
             if safe_word.lower() in full_context:
                 is_safe = True; break
+        
         if is_safe:
             self.violation_counter = 0 
             if "VIOLATION" in self.current_window_status:
@@ -335,16 +347,24 @@ class ProctorApp:
 
         info_frame = tk.Frame(hud_frame, bg=self.colors["card"])
         info_frame.pack(side="left", padx=30, pady=20)
-        self.status_lbl = tk.Label(info_frame, text="SYSTEM: CALIBRATING...", 
-                                   font=("Segoe UI", 14, "bold"), fg=self.colors["warning"], bg=self.colors["card"], anchor="w")
+        
+        self.status_lbl = tk.Label(info_frame, text="SYSTEM: READY TO START", 
+                                   font=("Segoe UI", 14, "bold"), fg=self.colors["primary"], bg=self.colors["card"], anchor="w")
         self.status_lbl.pack(fill="x")
         self.window_lbl = tk.Label(info_frame, text="APP MONITOR: ACTIVE", 
                                    font=("Segoe UI", 9, "bold"), fg=self.colors["subtext"], bg=self.colors["card"], anchor="w")
         self.window_lbl.pack(fill="x")
-        ttk.Button(hud_frame, text="SUBMIT & EXIT", style="Danger.TButton", command=self.end_exam).pack(side="right", padx=30)
+
+        # --- FIX 2: DYNAMIC ACTION BUTTON ---
+        # Initially set to "START EXAM" with Blue style
+        self.action_btn = ttk.Button(hud_frame, text="START EXAM", style="Modern.TButton", command=self.start_exam_sequence)
+        self.action_btn.pack(side="right", padx=30)
+
         self.video_label = tk.Label(self.root, bg="black")
         self.video_label.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.show_start_button()
+        
+        # REMOVED: self.show_start_button() <-- We don't want the center button anymore
+        
         self.is_exam_running = True 
         self.process_video_loop()
         self.start_watchdog()
@@ -364,7 +384,6 @@ class ProctorApp:
         if self.cap is None: return
         ret, frame = self.cap.read()
         if ret:
-            # Important: Calibrate on the ENHANCED frame if night vision is needed
             frame = self.enhance_low_light(frame)
             image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = self.mp_face_mesh.process(image_rgb)
@@ -376,13 +395,17 @@ class ProctorApp:
                 self.pitch_offset = pitch
                 self.yaw_offset = yaw
                 
-                # 2. Calibrate Gaze (Vertical + Horizontal)
+                # 2. Calibrate Gaze
                 _, _, base_vert, base_horiz = self.check_gaze(landmarks, frame.shape[1], frame.shape[0])
                 self.baseline_gaze_vert = base_vert
                 self.baseline_gaze_horiz = base_horiz
                 
                 self.is_calibrated = True
-                self.start_btn.destroy()
+                
+                # --- FIX 2: UPDATE BUTTON STATE ---
+                # Change button to "SUBMIT & EXIT" and switch to Danger (Red) style
+                self.action_btn.configure(text="SUBMIT & EXIT", style="Danger.TButton", command=self.end_exam)
+                
                 print(f"System: Calibrated. Pitch:{pitch:.1f}, VertGaze:{base_vert:.2f}, HorizGaze:{base_horiz:.2f}")
                 self.confirmed_status = "SYSTEM: ACTIVE"
                 self.status_lbl.config(text=self.confirmed_status, fg=self.colors["success"])
@@ -588,7 +611,7 @@ class ProctorApp:
             if abs(final_yaw) > MAX_YAW: return display_image, "LOOKING_AWAY"
             
             # B. Looking Down (Hard Pitch Limit)
-            if final_pitch > MAX_PITCH_DOWN: return display_image, "LOOKING_DOWN"
+            if final_pitch > MAX_PITCH_DOWN: return display_image, "LOOKING_UP"
             
             # C. Vertical Gaze Drop (Looking Down with Eyes)
             gaze_drop = self.baseline_gaze_vert - vert_ratio
